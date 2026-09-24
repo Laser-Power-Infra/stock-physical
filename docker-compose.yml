@@ -1,0 +1,54 @@
+services:
+  stock-physical:
+    image: ghcr.io/laser-power-infra/stock-physical:${APP_VERSION:-latest}
+
+    container_name: stock-physical
+
+    ports:
+      - "4150:4150"
+
+    env_file:
+      - .env.production
+
+    environment:
+      NODE_ENV: production
+      PORT: 4150
+      HOSTNAME: 0.0.0.0
+
+      GOOGLE_APPLICATION_CREDENTIALS: /app/credentials.json
+      TOKEN_PATH: /app/token.json
+
+    volumes:
+      - ./credentials.json:/app/credentials.json:ro
+      - ./token.json:/app/token.json:rw
+
+    restart: unless-stopped
+
+    networks:
+      - infra
+
+  # evolution-api:
+  #   image: evoapicloud/evolution-api:latest
+
+  #   container_name: evolution-api
+
+  #   restart: unless-stopped
+
+  #   ports:
+  #     - "4999:8080"
+
+  #   env_file:
+  #     - ./evolution/.env.production
+
+  #   environment:
+  #     DOCKER_ENV: "true"
+
+  #   volumes:
+  #     - ./evolution/instances:/evolution/instances
+
+  #   networks:
+  #     - infra
+
+networks:
+  infra:
+    external: true
