@@ -108,7 +108,7 @@ export default function Home() {
           syncedAt={syncedAt}
           onSync={handleSync}
           syncing={syncing}
-          title="GMD UPDATE"
+          title="Physical Stock"
         />
         {loading ? (
           <div className="flex flex-1 items-center justify-center gap-2 text-xs text-muted-foreground">

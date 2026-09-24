@@ -100,7 +100,7 @@ function OrderListCell({ display, poNo }: { display: string; poNo?: string }) {
         {links.length === 1 ? "View File" : `View Files (${links.length})`}
       </Button>
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="sm:max-w-[520px] p-0 gap-0 overflow-hidden">
+        <DialogContent className="sm:max-w-130 p-0 gap-0 overflow-hidden">
           <DialogHeader className="px-4 pt-4 pb-3 border-b border-[#e1e6eb] bg-[#f8f9fa]">
             <DialogTitle className="text-sm font-bold text-[#0a2540] flex items-center gap-2">
               <FileText size={16} className="text-[#0a2540]/70" />
@@ -249,7 +249,7 @@ function AttachmentCell({
         </button>
       )}
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="sm:max-w-[720px] p-0 gap-0 overflow-hidden">
+        <DialogContent className="sm:max-w-180 p-0 gap-0 overflow-hidden">
           <DialogHeader className="px-4 pt-4 pb-3 border-b border-[#e1e6eb] bg-[#f8f9fa]">
             <DialogTitle className="text-sm font-bold text-[#0a2540] flex items-center gap-2">
               <FileText size={16} className="text-[#0a2540]/70" />
@@ -419,7 +419,7 @@ function MultiSelect({
       {open && (
         <div
           className={`absolute top-full left-0 z-50 mt-1 bg-white border border-[#e1e6eb] rounded shadow-lg ${
-            optionMeta ? "min-w-64 max-w-[26rem]" : "w-48"
+            optionMeta ? "min-w-64 max-w-104" : "w-48"
           }`}
           onClick={(e) => e.stopPropagation()}
         >
@@ -2019,7 +2019,7 @@ castingRateInputs,
       />
       {onDeleteRow && (
         <Dialog open={!!confirmDeleteId} onOpenChange={(o) => !o && setConfirmDeleteId(null)}>
-          <DialogContent className="sm:max-w-[420px] p-0 gap-0 overflow-hidden">
+          <DialogContent className="sm:max-w-105 p-0 gap-0 overflow-hidden">
             <DialogHeader className="px-4 pt-4 pb-3 border-b border-[#e1e6eb] bg-[#f8f9fa]">
               <DialogTitle className="text-sm font-bold text-[#0a2540] flex items-center gap-2">
                 <Trash2 size={16} className="text-rose-600" />
