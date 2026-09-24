@@ -5,7 +5,11 @@ import { RefreshCw, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import GMDUpdateTable from "@/components/gmd_dashboard/GMDUpdateTable";
 import GMDUpdateHeader from "@/components/gmd_dashboard/GMDUpdateHeader";
-import { COLUMNS, COL_INDEX_TO_DB_FIELD, EDITABLE_COLUMNS } from "@/lib/gmd_lib/sheet-columns";
+import {
+  COLUMNS,
+  COL_INDEX_TO_DB_FIELD,
+  EDITABLE_COLUMNS,
+} from "@/lib/gmd_lib/sheet-columns";
 import { physicalStockRowToArray } from "@/lib/gmd_lib/sheet-row";
 import { useAppDispatch, useAppSelector } from "@/lib/hooks";
 import {
@@ -35,7 +39,9 @@ export default function Home() {
       dispatch(hydrateGMDUpdate(data.items));
     } catch (err) {
       toast.error(
-        err instanceof Error ? err.message : "Failed to load physical stock data.",
+        err instanceof Error
+          ? err.message
+          : "Failed to load physical stock data.",
       );
     } finally {
       setLoading(false);
@@ -95,39 +101,43 @@ export default function Home() {
   }, [loadData]);
 
   return (
-    <div className="flex flex-col flex-1 min-h-0 bg-[#f8f9fa]">
-      <GMDUpdateHeader
-        totalRows={totalRows}
-        syncedAt={syncedAt}
-        onSync={handleSync}
-        syncing={syncing}
-        title="GMD UPDATE"
-      />
-      {loading ? (
-        <div className="flex flex-1 items-center justify-center gap-2 text-xs text-muted-foreground">
-          <Loader2 size={14} className="animate-spin" />
-          Loading physical stock...
-        </div>
-      ) : (
-        <GMDUpdateTable
-          headers={COLUMNS}
-          rows={rows}
-          ids={ids}
-          selectedIndex={selectedIndex}
-          onSelect={setSelectedIndex}
-title="Physical Stock"
-          editable
-          editableColumns={EDITABLE_COLUMNS}
-          onCellUpdate={handleCellUpdate}
-          fullHeight
+    <main className="flex flex-col bg-background h-[calc(100vh-64px)] overflow-hidden">
+      <div className="flex-1 flex flex-col min-h-0 p-6 overflow-hidden">
+        <GMDUpdateHeader
+          totalRows={totalRows}
+          syncedAt={syncedAt}
+          onSync={handleSync}
+          syncing={syncing}
+          title="GMD UPDATE"
         />
-      )}
-      {syncing && (
-        <div className="fixed bottom-4 right-4 flex items-center gap-1.5 rounded-lg bg-[#0a2540] text-white px-3 py-2 text-xs font-semibold shadow-lg">
-          <RefreshCw size={12} className="animate-spin" />
-          Syncing sheet...
-        </div>
-      )}
-    </div>
+        {loading ? (
+          <div className="flex flex-1 items-center justify-center gap-2 text-xs text-muted-foreground">
+            <Loader2 size={14} className="animate-spin" />
+            Loading physical stock...
+          </div>
+        ) : (
+          <div className="flex-1 min-h-0 flex flex-col overflow-hidden mt-4">
+            <GMDUpdateTable
+              headers={COLUMNS}
+              rows={rows}
+              ids={ids}
+              selectedIndex={selectedIndex}
+              onSelect={setSelectedIndex}
+              title="Physical Stock"
+              editable
+              editableColumns={EDITABLE_COLUMNS}
+              onCellUpdate={handleCellUpdate}
+              fullHeight
+            />
+          </div>
+        )}
+        {syncing && (
+          <div className="fixed bottom-4 right-4 flex items-center gap-1.5 rounded-lg bg-[#0a2540] text-white px-3 py-2 text-xs font-semibold shadow-lg">
+            <RefreshCw size={12} className="animate-spin" />
+            Syncing sheet...
+          </div>
+        )}
+      </div>
+    </main>
   );
 }
