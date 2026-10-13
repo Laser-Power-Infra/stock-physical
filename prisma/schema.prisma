@@ -51,6 +51,7 @@ model PhysicalStock {
   // highest cost, selected by default and editable via the BOM ID dropdown.
   cost                           String?
   bom_id                         String?
+  form_date                           DateTime @default(now())
   created_at                     DateTime @default(now())
   updated_at                     DateTime @updatedAt
 
