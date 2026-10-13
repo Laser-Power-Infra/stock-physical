@@ -30,6 +30,8 @@ export const COLUMNS = [
   "MOQ",
   "IF LESS THAN MOQ- EXTRA CHARGES",
   "DRAWING/ TECHNICAL DATA",
+  "COST",
+  "BOM ID",
 ];
 
 export const COL_INDEX_TO_DB_FIELD: Record<number, string> = {
@@ -64,6 +66,8 @@ export const COL_INDEX_TO_DB_FIELD: Record<number, string> = {
   28: "moq",
   29: "if_less_than_moq_extra_charges",
   30: "drawing_technical_data",
+  31: "cost",
+  32: "bom_id",
 };
 
 export const NUMERIC_COLUMNS = new Set([
@@ -92,6 +96,8 @@ export const EDITABLE_COLUMNS = [
   "MOQ",
   "IF LESS THAN MOQ- EXTRA CHARGES",
   "DRAWING/ TECHNICAL DATA",
+  "COST",
+  "BOM ID",
 ];
 
 export const EDITABLE_FIELDS = EDITABLE_COLUMNS.map(

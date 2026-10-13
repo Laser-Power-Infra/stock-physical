@@ -1,3 +1,6 @@
+-- CreateSchema
+CREATE SCHEMA IF NOT EXISTS "public";
+
 -- CreateTable
 CREATE TABLE "PhysicalStock" (
     "id" TEXT NOT NULL,
@@ -32,6 +35,8 @@ CREATE TABLE "PhysicalStock" (
     "moq" TEXT,
     "if_less_than_moq_extra_charges" TEXT,
     "drawing_technical_data" TEXT,
+    "cost" TEXT,
+    "bom_id" TEXT,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
 

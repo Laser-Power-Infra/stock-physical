@@ -42,6 +42,8 @@ export interface PhysicalStockRow {
   moq: string | null;
   if_less_than_moq_extra_charges: string | null;
   drawing_technical_data: string | null;
+  cost: string | null;
+  bom_id: string | null;
 }
 
 const adapter = createEntityAdapter<PhysicalStockRow>();

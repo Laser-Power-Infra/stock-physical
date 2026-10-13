@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { createSelector } from "@reduxjs/toolkit";
 import { RefreshCw, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import GMDUpdateTable from "@/components/gmd_dashboard/GMDUpdateTable";
@@ -24,6 +25,15 @@ interface PhysicalStockApiResponse {
   items: PhysicalStockRow[];
   totalRows: number;
 }
+
+const selectRows = createSelector(
+  [selectAllGMDUpdateRows],
+  (items) => items.map((row) => physicalStockRowToArray(row)),
+);
+const selectIds = createSelector(
+  [selectAllGMDUpdateRows],
+  (items) => items.map((row) => row.id),
+);
 
 export default function Home() {
   const dispatch = useAppDispatch();
@@ -52,12 +62,8 @@ export default function Home() {
     loadData();
   }, [loadData]);
 
-  const rows = useAppSelector((state) =>
-    selectAllGMDUpdateRows(state).map((row) => physicalStockRowToArray(row)),
-  );
-  const ids = useAppSelector((state) =>
-    selectAllGMDUpdateRows(state).map((row) => row.id),
-  );
+  const rows = useAppSelector(selectRows);
+  const ids = useAppSelector(selectIds);
   const totalRows = useMemo(() => rows.length, [rows]);
 
   const handleCellUpdate = useCallback(
