@@ -6,6 +6,7 @@ import { RefreshCw, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import GMDUpdateTable from "@/components/gmd_dashboard/GMDUpdateTable";
 import GMDUpdateHeader from "@/components/gmd_dashboard/GMDUpdateHeader";
+import PhysicalStockFormDialog from "@/components/gmd_dashboard/PhysicalStockFormDialog";
 import {
   COLUMNS,
   COL_INDEX_TO_DB_FIELD,
@@ -42,6 +43,7 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [syncedAt, setSyncedAt] = useState<string | null>(null);
+  const [showNewDialog, setShowNewDialog] = useState(false);
 
   const loadData = useCallback(async () => {
     try {
@@ -116,6 +118,12 @@ export default function Home() {
           onSync={handleSync}
           syncing={syncing}
           title="Physical Stock"
+          onNew={() => setShowNewDialog(true)}
+        />
+        <PhysicalStockFormDialog
+          open={showNewDialog}
+          onOpenChange={setShowNewDialog}
+          onCreated={loadData}
         />
         {loading ? (
           <div className="flex flex-1 items-center justify-center gap-2 text-xs text-muted-foreground">

@@ -5,7 +5,7 @@ import { physicalStockRowToArray } from "@/lib/gmd_lib/sheet-row";
 
 export async function GET() {
   const items = await prisma.physicalStock.findMany({
-    orderBy: { updated_at: "desc" },
+    orderBy: [{ form_date: "desc" }, { created_at: "desc" }],
   });
   const payload = items.map((i) => ({
     ...i,

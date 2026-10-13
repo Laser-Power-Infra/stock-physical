@@ -1,5 +1,5 @@
 import { type ReactNode } from "react";
-import { RefreshCw, Loader2 } from "lucide-react";
+import { RefreshCw, Loader2, Plus } from "lucide-react";
 
 interface GMDUpdateHeaderProps {
   totalRows: number;
@@ -8,6 +8,7 @@ interface GMDUpdateHeaderProps {
   syncing?: boolean;
   title?: string;
   actions?: ReactNode;
+  onNew?: () => void;
 }
 
 function formatSyncTime(dateStr: string | null): string {
@@ -33,6 +34,7 @@ export default function GMDUpdateHeader({
   syncing,
   title = "GMD UPDATE",
   actions,
+  onNew,
 }: GMDUpdateHeaderProps) {
   return (
     <div className="bg-[#0a2540] px-6 py-3 border-b border-[#1e3d59] flex items-center justify-between">
@@ -47,6 +49,17 @@ export default function GMDUpdateHeader({
           </span>
         )}
       </div>
+      {onNew && (
+        <div className="flex items-center gap-2">
+          <button
+            onClick={onNew}
+            className="flex items-center gap-1.5 bg-white/10 hover:bg-white/20 text-white border border-white/20 rounded px-3 py-1.5 text-[11px] font-semibold transition-all"
+          >
+            <Plus size={12} />
+            New Item
+          </button>
+        </div>
+      )}
     {/* {(onSync || actions) && (
         <div className="flex items-center gap-2">
           {onSync && (

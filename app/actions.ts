@@ -8,6 +8,60 @@ import {
   EDITABLE_FIELDS,
 } from "@/lib/gmd_lib/sheet-columns";
 
+const ERPC_LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+async function generateUniqueErpCode(): Promise<string> {
+  for (let attempt = 0; attempt < 20; attempt++) {
+    let code = "";
+    for (let i = 0; i < 3; i++) {
+      code += ERPC_LETTERS[Math.floor(Math.random() * ERPC_LETTERS.length)];
+    }
+    code += String(Math.floor(Math.random() * 1_000_000)).padStart(6, "0");
+    const exists = await prisma.physicalStock.findFirst({
+      where: { erp_code: code },
+      select: { id: true },
+    });
+    if (!exists) return code;
+  }
+  throw new Error("Could not generate a unique ERP code.");
+}
+
+export interface CreatePhysicalStockInput {
+  location?: string | null;
+  l2_valve_type?: string | null;
+  dimension?: string | null;
+  l7_dimension?: string | null;
+  l4_component?: string | null;
+  l5_material?: string | null;
+  l6_std?: string | null;
+  l8_item_category?: string | null;
+}
+
+export async function createPhysicalStockAction(
+  input: CreatePhysicalStockInput,
+): Promise<{ success: boolean; id?: string; erp_code?: string; error?: string }> {
+  try {
+    const erp_code = await generateUniqueErpCode();
+    await prisma.physicalStock.create({
+      data: {
+        erp_code,
+        location: input.location?.trim().toUpperCase() || null,
+        l2_valve_type: input.l2_valve_type?.trim().toUpperCase() || null,
+        dimension: input.dimension?.trim().toUpperCase() || null,
+        l7_dimension: input.l7_dimension?.trim().toUpperCase() || null,
+        l4_component: input.l4_component?.trim().toUpperCase() || null,
+        l5_material: input.l5_material?.trim().toUpperCase() || null,
+        l6_std: input.l6_std?.trim().toUpperCase() || null,
+        l8_item_category: input.l8_item_category?.trim().toUpperCase() || null,
+      },
+    });
+    return { success: true, erp_code };
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    return { success: false, error: message };
+  }
+}
+
 export interface FieldUpdateResult {
   id: string;
   field: string;
