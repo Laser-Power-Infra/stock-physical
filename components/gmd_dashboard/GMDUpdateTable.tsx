@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useMemo, useRef, useCallback, useEffect } from "react";
-import { ChevronUp, ChevronDown, Search, RotateCcw, X, Download, Files, FileText, ExternalLink, Copy, Upload, Eye, Paperclip, Trash2 } from "lucide-react";
+import { format } from "date-fns";
+import { ChevronUp, ChevronDown, Search, RotateCcw, X, Download, Files, FileText, ExternalLink, Copy, Upload, Eye, Paperclip, Trash2, TriangleAlert } from "lucide-react";
 import GMDUpdateStatusBadge from "./GMDUpdateStatusBadge";
 import {
   STATUS_COLUMNS,
@@ -344,6 +345,16 @@ function isDateHeader(header: string): boolean {
   return l.includes("date") || l.includes("warranty");
 }
 
+const DUPLICATE_KEY_FIELDS = new Set([
+  "location",
+  "l2_valve_type",
+  "l7_dimension",
+  "l4_component",
+  "l5_material",
+  "l6_std",
+  "l8_item_category",
+]);
+
 function compareDates(aVal: unknown, bVal: unknown, dir: number): number {
   const aStr = String(aVal ?? "").trim();
   const bStr = String(bVal ?? "").trim();
@@ -643,6 +654,7 @@ castingRateInputs,
   const [localDateRanges, setLocalDateRanges] = useState<
     Record<string, { from: string; to: string; blank?: boolean }>
   >({});
+  const [showOnlyDuplicateErp, setShowOnlyDuplicateErp] = useState(false);
 
   const currentPage = isControlled
     ? filterState!.currentPage
@@ -766,7 +778,9 @@ castingRateInputs,
       const widths: Record<number, number> = {};
       headers.forEach((h, i) => {
         widths[i] =
-          h === "ITEM NAME (proposed)-AUTO"
+          h === "Date"
+            ? 120
+            : h === "ITEM NAME (proposed)-AUTO"
             ? 200
             : h === "Party Mail Address"
               ? 300
@@ -790,7 +804,7 @@ castingRateInputs,
     if (!confirmDeleteId) return null;
     const idx = ids.indexOf(confirmDeleteId);
     if (idx === -1) return null;
-    return { id: confirmDeleteId, erpCode: String(rows[idx]?.[0] ?? "").trim() };
+    return { id: confirmDeleteId, erpCode: String(rows[idx]?.[1] ?? "").trim() };
   }, [confirmDeleteId, ids, rows]);
 
   const handleSort = (colIndex: number) => {
@@ -857,6 +871,7 @@ castingRateInputs,
       setLocalDateTo("");
       setLocalDateRanges({});
     }
+    setShowOnlyDuplicateErp(false);
     setCurrentPage(1);
     onReset?.();
   };
@@ -867,6 +882,7 @@ castingRateInputs,
     globalSearch.trim() !== "" ||
     dateFrom !== "" ||
     dateTo !== "" ||
+    showOnlyDuplicateErp ||
     Object.values(dateRanges).some((r) => r.from || r.to);
 
   const showResetFilters = hasActiveFilters || !!externalFiltersActive;
@@ -904,8 +920,32 @@ castingRateInputs,
     return cache;
   }, [rows, headers]);
 
+  const duplicateRowSet = useMemo(() => {
+    const erpIdx = headers.indexOf("ERP CODE");
+    if (erpIdx === -1) return new Set<unknown[]>();
+    const keyIdxs = Object.keys(COL_INDEX_TO_DB_FIELD)
+      .map(Number)
+      .sort((a, b) => a - b)
+      .filter((i) => DUPLICATE_KEY_FIELDS.has(COL_INDEX_TO_DB_FIELD[i]));
+    const groups = new Map<string, Set<string>>();
+    const keyOf = (row: unknown[]) =>
+      keyIdxs.map((i) => String(row[i] ?? "").trim()).join("\u0001");
+    for (const row of rows) {
+      const key = keyOf(row);
+      const codes = groups.get(key) ?? new Set<string>();
+      codes.add(String(row[erpIdx] ?? "").trim());
+      groups.set(key, codes);
+    }
+    const result = new Set<unknown[]>();
+    for (const row of rows) {
+      if ((groups.get(keyOf(row))?.size ?? 0) > 1) result.add(row);
+    }
+    return result;
+  }, [rows, headers]);
+
   const rowPassesFilters = useCallback(
     (row: unknown[], opts: { excludeHeader?: string; id?: string } = {}): boolean => {
+      if (showOnlyDuplicateErp && !duplicateRowSet.has(row)) return false;
       const gs = globalSearch;
       if (gs.trim()) {
         const q = gs.toLowerCase();
@@ -1008,6 +1048,8 @@ castingRateInputs,
       dateTo,
       bomIdCategoryFilter,
       getBomIdCategory,
+      showOnlyDuplicateErp,
+      duplicateRowSet,
     ],
   );
 
@@ -1444,7 +1486,7 @@ castingRateInputs,
                   <th
                     key={idx}
                     className={`relative bg-[#f4f6f8] text-[#0a2540] text-xs font-bold uppercase tracking-wider px-3 py-2 text-left border-b-2 border-[#e1e6eb] border-r  last:border-r-0 select-none align-top${
-                      idx < 2 ? " sticky z-20" : ""
+                      idx < 3 ? " sticky z-20" : ""
                     }${
                       editable &&
                       (!editableColumns ||
@@ -1454,11 +1496,13 @@ castingRateInputs,
                         : ""
                     }`}
                     style={
-                      idx === 1
-                        ? { left: columnWidths[0] }
-                        : idx === 0
-                          ? { left: 0 }
-                          : undefined
+                      idx === 2
+                        ? { left: columnWidths[0] + columnWidths[1] }
+                        : idx === 1
+                          ? { left: columnWidths[0] }
+                          : idx === 0
+                            ? { left: 0 }
+                            : undefined
                     }
                   >
                     <div
@@ -1580,6 +1624,24 @@ castingRateInputs,
                         </div>
                       ) : (
                         <div className="flex flex-col gap-1 mt-1.5">
+                          {header === "ERP CODE" && (
+                            <label
+                              onClick={(e) => e.stopPropagation()}
+                              className="flex items-center gap-1.5 text-[10px] text-[#0a2540]/70 cursor-pointer select-none"
+                              title="Show only rows sharing location & L-columns with a different ERP code"
+                            >
+                              <input
+                                type="checkbox"
+                                checked={showOnlyDuplicateErp}
+                                onChange={(e) => {
+                                  setShowOnlyDuplicateErp(e.target.checked);
+                                  setCurrentPage(1);
+                                }}
+                                className="accent-[#0070f3]"
+                              />
+                              Duplicates only
+                            </label>
+                          )}
                           <MultiSelect
                             options={uniqueVals}
                             selected={multiFilters[header] ?? []}
@@ -1650,8 +1712,12 @@ castingRateInputs,
               paginatedWithIds.map(({ row, id }, idx) => (
                 <tr
                   key={id ?? idx}
-                  className={`transition-colors hover:bg-gray-50 cursor-pointer ${
-                    selectedIndex === idx ? "bg-blue-50" : ""
+                  className={`transition-colors cursor-pointer ${
+                    selectedIndex === idx
+                      ? "bg-blue-50"
+                      : duplicateRowSet.has(row)
+                        ? "bg-yellow-100 hover:bg-yellow-200"
+                        : "hover:bg-gray-50"
                   }`}
                   onClick={() => onSelect(idx)}
                 >
@@ -1923,6 +1989,33 @@ castingRateInputs,
                           />
                         );
                       }
+                    } else if (header === "ERP CODE") {
+                      const isDuplicate = duplicateRowSet.has(row);
+                      cellContent = (
+                        <span
+                          className="flex items-center gap-1 min-w-0"
+                          title={
+                            isDuplicate
+                              ? "Same location & L-columns as another row with a different ERP code"
+                              : undefined
+                          }
+                        >
+                          <span className="truncate">{display || "—"}</span>
+                          {isDuplicate && (
+                            <TriangleAlert
+                              size={12}
+                              className="shrink-0 text-amber-600"
+                            />
+                          )}
+                        </span>
+                      );
+                    } else if (isDateHeader(header)) {
+                      const parsed = parseDate(display);
+                      cellContent = (
+                        <span className="truncate block" title={display}>
+                          {parsed ? format(parsed, "dd-MMM-yyyy") : display || "—"}
+                        </span>
+                      );
                     } else if (STATUS_COLUMNS.has(header)) {
                       cellContent = (
                         <GMDUpdateStatusBadge value={display || null} />
@@ -1975,14 +2068,24 @@ castingRateInputs,
                         key={cellIdx}
                         rowSpan={mergedSpan}
                         className={`px-3 py-2 text-xs border-b border-[#e1e6eb] border-r  last:border-r-0${
-                          cellIdx < 2 ? " sticky z-10 bg-white" : ""
+                          cellIdx < 3
+                            ? ` sticky z-10 ${
+                                selectedIndex === idx
+                                  ? "bg-blue-50"
+                                  : duplicateRowSet.has(row)
+                                    ? "bg-yellow-100"
+                                    : "bg-white"
+                              }`
+                            : ""
                         }${isCellEditable || isPnBlankDropdown ? " bg-amber-50" : ""}`}
                         style={
-                          cellIdx === 1
-                            ? { left: columnWidths[0] }
-                            : cellIdx === 0
-                              ? { left: 0 }
-                              : undefined
+                          cellIdx === 2
+                            ? { left: columnWidths[0] + columnWidths[1] }
+                            : cellIdx === 1
+                              ? { left: columnWidths[0] }
+                              : cellIdx === 0
+                                ? { left: 0 }
+                                : undefined
                         }
                       >
                         {cellContent}

@@ -11,6 +11,7 @@ import {
 
 export interface PhysicalStockRow {
   id: string;
+  form_date: string | Date | null;
   erp_code: string | null;
   location: string | null;
   l2_valve_type: string | null;

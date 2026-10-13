@@ -6,7 +6,8 @@
     "dev": "next dev  --port 4149",
     "build": "next build",
     "start": "next start --port 4150",
-    "lint": "eslint"
+    "lint": "eslint",
+    "set-form-date": "node --env-file=.env prisma/scripts/set-form-date.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.8.0",

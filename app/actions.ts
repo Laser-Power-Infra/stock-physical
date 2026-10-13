@@ -34,7 +34,9 @@ export async function updatePhysicalStockUsdCostAction(
   };
 }
 
-const CONTENT_FIELDS = Array.from(new Set(Object.values(COL_INDEX_TO_DB_FIELD)));
+const CONTENT_FIELDS = Array.from(
+  new Set(Object.values(COL_INDEX_TO_DB_FIELD)),
+).filter((field) => field !== "form_date");
 
 function contentKey(record: Record<string, string | null>): string {
   const o: Record<string, string | null> = {};
