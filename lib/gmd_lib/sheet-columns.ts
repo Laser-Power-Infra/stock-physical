@@ -100,6 +100,28 @@ export const EDITABLE_COLUMNS = [
   "BOM ID",
 ];
 
+export const HIDDEN_COLUMNS = [
+  "sum of PHYSICAL stock",
+  "stock as per erp",
+  "rate/unit",
+  "rate per pc*qty*weight",
+  "weight per pc",
+  "item wise-value",
+  "MOVING WITHIN 3 MONTHS",
+  "Order Ag Approval recvd",
+  "PURCHASE IN 26-27",
+  "dispatched in 26-27",
+  "ORDER IN hand QTY",
+  "shortage qty",
+  "item type",
+  "PRICE",
+  "MOQ",
+  "IF LESS THAN MOQ- EXTRA CHARGES",
+  "DRAWING/ TECHNICAL DATA",
+  "COST",
+  "BOM ID",
+];
+
 export const EDITABLE_FIELDS = EDITABLE_COLUMNS.map(
   (header) => COL_INDEX_TO_DB_FIELD[COLUMNS.indexOf(header)],
 ).filter(Boolean);

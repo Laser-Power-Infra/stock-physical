@@ -10,6 +10,7 @@ import {
   COLUMNS,
   COL_INDEX_TO_DB_FIELD,
   EDITABLE_COLUMNS,
+  HIDDEN_COLUMNS,
 } from "@/lib/gmd_lib/sheet-columns";
 import { physicalStockRowToArray } from "@/lib/gmd_lib/sheet-row";
 import { useAppDispatch, useAppSelector } from "@/lib/hooks";
@@ -134,6 +135,7 @@ export default function Home() {
               editableColumns={EDITABLE_COLUMNS}
               onCellUpdate={handleCellUpdate}
               fullHeight
+              hiddenColumns={HIDDEN_COLUMNS}
             />
           </div>
         )}
