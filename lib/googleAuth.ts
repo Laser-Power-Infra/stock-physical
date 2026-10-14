@@ -1,8 +1,10 @@
-import { google } from "googleapis";
+import { auth } from "@googleapis/sheets";
 import fs from "fs";
 import path from "path";
 
-let oauth2ClientInstance: InstanceType<typeof google.auth.OAuth2> | null = null;
+type OAuth2Client = InstanceType<typeof auth.OAuth2>;
+
+let oauth2ClientInstance: OAuth2Client | null = null;
 
 /**
  * Initializes and returns the singleton OAuth2 client.
@@ -34,7 +36,7 @@ export function getOAuthClient() {
   const { client_id, client_secret, redirect_uris } = clientInfo;
   const redirectUri = redirect_uris && redirect_uris[0] ? redirect_uris[0] : "http://localhost";
 
-  const oauth2Client = new google.auth.OAuth2(
+  const oauth2Client = new auth.OAuth2(
     client_id,
     client_secret,
     redirectUri
@@ -47,21 +49,30 @@ export function getOAuthClient() {
     scope: tokenData.scopes ? tokenData.scopes.join(" ") : undefined,
   });
 
-  oauth2Client.on("tokens", (tokens) => {
-    try {
-      const currentTokenData = JSON.parse(fs.readFileSync(tokenPath, "utf8"));
-      const updatedTokenData = {
-        ...currentTokenData,
-        token: tokens.access_token || currentTokenData.token,
-        refresh_token: tokens.refresh_token || currentTokenData.refresh_token,
-        expiry: tokens.expiry_date ? new Date(tokens.expiry_date).toISOString() : currentTokenData.expiry,
-      };
-      fs.writeFileSync(tokenPath, JSON.stringify(updatedTokenData, null, 2), "utf8");
-      console.log("Successfully refreshed and updated token.json with new OAuth2 access token.");
-    } catch (err) {
-      console.error("Failed to persist refreshed OAuth2 tokens to token.json:", err);
+  oauth2Client.on(
+    "tokens",
+    (tokens: {
+      access_token?: string | null;
+      refresh_token?: string | null;
+      expiry_date?: number | null;
+    }) => {
+      try {
+        const currentTokenData = JSON.parse(fs.readFileSync(tokenPath, "utf8"));
+        const updatedTokenData = {
+          ...currentTokenData,
+          token: tokens.access_token || currentTokenData.token,
+          refresh_token: tokens.refresh_token || currentTokenData.refresh_token,
+          expiry: tokens.expiry_date
+            ? new Date(tokens.expiry_date).toISOString()
+            : currentTokenData.expiry,
+        };
+        fs.writeFileSync(tokenPath, JSON.stringify(updatedTokenData, null, 2), "utf8");
+        console.log("Successfully refreshed and updated token.json with new OAuth2 access token.");
+      } catch (err) {
+        console.error("Failed to persist refreshed OAuth2 tokens to token.json:", err);
+      }
     }
-  });
+  );
 
   oauth2ClientInstance = oauth2Client;
 

@@ -3,6 +3,7 @@
 import { createHash } from "crypto";
 import { prisma } from "@/lib/prisma";
 import { fetchPhysicalStockSheet } from "@/lib/gmd_lib/physical-stock-sheet";
+import { computeAvailableQty } from "@/lib/gmd_lib/qty";
 import {
   COL_INDEX_TO_DB_FIELD,
   EDITABLE_FIELDS,
@@ -76,6 +77,50 @@ export async function updatePhysicalStockFieldAction(
   const data: Record<string, string | null> = { [field]: value ?? null };
   await prisma.physicalStock.update({ where: { id }, data });
   return { id, field, value: value ?? null };
+}
+
+export interface QtyUpdateResult {
+  id: string;
+  received_qty: string | null;
+  dispatch_qty: string | null;
+  available_qty: string | null;
+}
+
+/**
+ * Updates received_qty/dispatch_qty and recomputes available_qty =
+ * received - dispatch, but only when BOTH are present (blank = missing).
+ * When only one is present the existing available_qty is left untouched.
+ * Persists everything to the DB.
+ */
+export async function updatePhysicalStockQtyFieldAction(
+  id: string,
+  field: string,
+  value: string | null,
+): Promise<QtyUpdateResult> {
+  const row = await prisma.physicalStock.findUnique({ where: { id } });
+  if (!row) throw new Error("Physical stock row not found.");
+
+  const received = field === "received_qty" ? value : row.received_qty;
+  const dispatch = field === "dispatch_qty" ? value : row.dispatch_qty;
+  const available = computeAvailableQty(received, dispatch);
+  const available_qty =
+    available !== null ? available : row.available_qty;
+
+  await prisma.physicalStock.update({
+    where: { id },
+    data: {
+      received_qty: received ?? null,
+      dispatch_qty: dispatch ?? null,
+      available_qty,
+    },
+  });
+
+  return {
+    id,
+    received_qty: received ?? null,
+    dispatch_qty: dispatch ?? null,
+    available_qty,
+  };
 }
 
 export async function updatePhysicalStockUsdCostAction(

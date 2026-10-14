@@ -6,6 +6,7 @@ import {
 import type { RootState } from "./store";
 import {
   updatePhysicalStockFieldAction,
+  updatePhysicalStockQtyFieldAction,
   updatePhysicalStockUsdCostAction,
 } from "@/app/actions";
 
@@ -64,6 +65,21 @@ export const updateGMDUpdateField = createAsyncThunk(
   },
 );
 
+export const updateGMDUpdateQty = createAsyncThunk(
+  "gmdUpdate/updateQty",
+  async ({
+    id,
+    field,
+    value,
+  }: {
+    id: string;
+    field: string;
+    value: string | null;
+  }) => {
+    return await updatePhysicalStockQtyFieldAction(id, field, value);
+  },
+);
+
 export const updateGMDUsdCost = createAsyncThunk(
   "gmdUpdate/updateUsdCost",
   async ({ id, usdCost }: { id: string; usdCost: string | null }) => {
@@ -90,6 +106,13 @@ const gmdUpdateSlice = createSlice({
     builder.addCase(updateGMDUpdateField.fulfilled, (state, action) => {
       const { id, field, value } = action.payload;
       adapter.updateOne(state, { id, changes: { [field]: value } });
+    });
+    builder.addCase(updateGMDUpdateQty.fulfilled, (state, action) => {
+      const { id, received_qty, dispatch_qty, available_qty } = action.payload;
+      adapter.updateOne(state, {
+        id,
+        changes: { received_qty, dispatch_qty, available_qty },
+      });
     });
   },
 });

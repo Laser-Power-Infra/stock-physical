@@ -1,4 +1,4 @@
-import { google } from "googleapis";
+import { sheets } from "@googleapis/sheets";
 import { getOAuthClient } from "../googleAuth";
 import { COLUMNS, COL_INDEX_TO_DB_FIELD } from "./sheet-columns";
 
@@ -12,7 +12,7 @@ function getSpreadsheetId(): string {
 }
 
 function getSheetsClient() {
-  return google.sheets({ version: "v4", auth: getOAuthClient() });
+  return sheets({ version: "v4", auth: getOAuthClient() });
 }
 
 function normalizeHeader(h: string): string {
@@ -41,8 +41,8 @@ function buildColumnIndexMap(
  * stock-physical tab, fall back to a tab literally titled "stock-phys".
  */
 async function resolveStockPhysTab(spreadsheetId: string): Promise<string> {
-  const sheets = getSheetsClient();
-  const meta = await sheets.spreadsheets.get({ spreadsheetId });
+  const sheetsClient = getSheetsClient();
+  const meta = await sheetsClient.spreadsheets.get({ spreadsheetId });
   const tabs = meta.data.sheets ?? [];
   const byGid = tabs.find(
     (s) => s.properties?.sheetId === STOCK_PHYS_TAB_GID,
@@ -68,9 +68,9 @@ export async function fetchPhysicalStockSheet(): Promise<
 > {
   const spreadsheetId = getSpreadsheetId();
   const tab = await resolveStockPhysTab(spreadsheetId);
-  const sheets = getSheetsClient();
+  const sheetsClient = getSheetsClient();
 
-  const response = await sheets.spreadsheets.values.get({
+  const response = await sheetsClient.spreadsheets.values.get({
     spreadsheetId,
     range: `'${tab}'!A:ZZZ`,
     valueRenderOption: "FORMATTED_VALUE",

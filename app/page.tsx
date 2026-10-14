@@ -7,6 +7,9 @@ import { toast } from "sonner";
 import GMDUpdateTable from "@/components/gmd_dashboard/GMDUpdateTable";
 import GMDUpdateHeader from "@/components/gmd_dashboard/GMDUpdateHeader";
 import PhysicalStockFormDialog from "@/components/gmd_dashboard/PhysicalStockFormDialog";
+import StockAnalyticsSidebar, {
+  type StockCardKind,
+} from "@/components/gmd_dashboard/StockAnalyticsSidebar";
 import {
   COLUMNS,
   COL_INDEX_TO_DB_FIELD,
@@ -18,6 +21,7 @@ import { useAppDispatch, useAppSelector } from "@/lib/hooks";
 import {
   hydrateGMDUpdate,
   updateGMDUpdateField,
+  updateGMDUpdateQty,
   selectAllGMDUpdateRows,
 } from "@/lib/gmdUpdateSlice";
 import type { PhysicalStockRow } from "@/lib/gmdUpdateSlice";
@@ -26,6 +30,14 @@ interface PhysicalStockApiResponse {
   headers: string[];
   items: PhysicalStockRow[];
   totalRows: number;
+}
+
+const AVAILABLE_IDX = COLUMNS.indexOf("AVAILABLE QTY.");
+const RATE_IDX = COLUMNS.indexOf("rate/unit");
+
+function toNum(value: unknown): number {
+  const n = parseFloat(String(value ?? "").replace(/,/g, ""));
+  return Number.isFinite(n) ? n : 0;
 }
 
 const selectRows = createSelector(
@@ -44,6 +56,9 @@ export default function Home() {
   const [syncing, setSyncing] = useState(false);
   const [syncedAt, setSyncedAt] = useState<string | null>(null);
   const [showNewDialog, setShowNewDialog] = useState(false);
+  const [filteredRows, setFilteredRows] = useState<unknown[][]>([]);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [cardFilter, setCardFilter] = useState<StockCardKind | null>(null);
 
   const loadData = useCallback(async () => {
     try {
@@ -69,6 +84,34 @@ export default function Home() {
   const ids = useAppSelector(selectIds);
   const totalRows = useMemo(() => rows.length, [rows]);
 
+  const { displayRows, displayIds } = useMemo(() => {
+    if (!cardFilter) return { displayRows: rows, displayIds: ids };
+    const rowsOut: unknown[][] = [];
+    const idsOut: string[] = [];
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i];
+      const qty = toNum(row[AVAILABLE_IDX]);
+      const rate = toNum(row[RATE_IDX]);
+      if (cardFilter === "qty" && qty <= 0) continue;
+      if (cardFilter === "value" && rate * qty <= 0) continue;
+      rowsOut.push(row);
+      idsOut.push(ids[i]);
+    }
+    return { displayRows: rowsOut, displayIds: idsOut };
+  }, [rows, ids, cardFilter]);
+
+  const { availableQty, availableValue } = useMemo(() => {
+    let qty = 0;
+    let value = 0;
+    for (const row of filteredRows) {
+      const available = toNum(row[AVAILABLE_IDX]);
+      const rate = toNum(row[RATE_IDX]);
+      qty += available;
+      value += rate * available;
+    }
+    return { availableQty: qty, availableValue: value };
+  }, [filteredRows]);
+
   const handleCellUpdate = useCallback(
     async (id: string, colIndex: number, value: string) => {
       const field = COL_INDEX_TO_DB_FIELD[colIndex];
@@ -76,7 +119,11 @@ export default function Home() {
       const header = COLUMNS[colIndex];
       const toastId = toast.loading(`Updating ${header}...`);
       try {
-        await dispatch(updateGMDUpdateField({ id, field, value })).unwrap();
+        if (field === "received_qty" || field === "dispatch_qty") {
+          await dispatch(updateGMDUpdateQty({ id, field, value })).unwrap();
+        } else {
+          await dispatch(updateGMDUpdateField({ id, field, value })).unwrap();
+        }
         toast.success(`${header} updated`, { id: toastId });
       } catch (err) {
         toast.error(
@@ -131,20 +178,34 @@ export default function Home() {
             Loading physical stock...
           </div>
         ) : (
-          <div className="flex-1 min-h-0 flex flex-col overflow-hidden mt-4">
-            <GMDUpdateTable
-              headers={COLUMNS}
-              rows={rows}
-              ids={ids}
-              selectedIndex={selectedIndex}
-              onSelect={setSelectedIndex}
-              title="Physical Stock"
-              editable
-              editableColumns={EDITABLE_COLUMNS}
-              onCellUpdate={handleCellUpdate}
-              fullHeight
-              hiddenColumns={HIDDEN_COLUMNS}
+          <div className="flex-1 min-h-0 flex gap-4 mt-4">
+            <StockAnalyticsSidebar
+              availableQty={availableQty}
+              availableValue={availableValue}
+              collapsed={sidebarCollapsed}
+              onToggle={() => setSidebarCollapsed((c) => !c)}
+              activeCard={cardFilter}
+              onCardClick={(kind) =>
+                setCardFilter((prev) => (prev === kind ? null : kind))
+              }
             />
+            <div className="flex-1 min-w-0 min-h-0 flex flex-col overflow-hidden">
+              <GMDUpdateTable
+                headers={COLUMNS}
+                rows={displayRows}
+                ids={displayIds}
+                selectedIndex={selectedIndex}
+                onSelect={setSelectedIndex}
+                title="Physical Stock"
+                editable
+                editableColumns={EDITABLE_COLUMNS}
+                onCellUpdate={handleCellUpdate}
+                onFilteredRowsChange={setFilteredRows}
+                blankOnlyEditableColumns={["ERP CODE"]}
+                fullHeight
+                hiddenColumns={HIDDEN_COLUMNS}
+              />
+            </div>
           </div>
         )}
         {syncing && (

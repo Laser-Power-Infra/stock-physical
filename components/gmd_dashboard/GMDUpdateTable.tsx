@@ -1737,6 +1737,8 @@ castingRateInputs,
 
                     let cellContent: React.ReactNode;
                     const isBlankCell = String(display ?? "").trim() === "";
+                    const isErpBlankHighlight =
+                      header === "ERP CODE" && isBlankCell;
                     const isBlankOnlyColumn = !!blankOnlyEditableColumns?.includes(header);
                     const baseEditable =
                       !editableColumns ||
@@ -1888,6 +1890,36 @@ castingRateInputs,
                             />
                           );
                         }
+                      } else if (header === "ERP CODE") {
+                        cellContent = (
+                          <input
+                            key={display + "-" + idx + "-" + cellIdx}
+                            type="text"
+                            defaultValue={display}
+                            placeholder="-"
+                            className="w-full text-xs bg-transparent border-none outline-none uppercase"
+                            onClick={(e) => e.stopPropagation()}
+                            onChange={(e) => {
+                              e.target.value = e.target.value.toUpperCase();
+                            }}
+                            onBlur={(e) => {
+                              const next = e.target.value.trim().toUpperCase();
+                              if (next === display) return;
+                              if (!/^[A-Z]{3}[0-9]{6}$/.test(next)) {
+                                toast.error(
+                                  "ERP code must be 3 letters followed by 6 digits (e.g. ABC123456).",
+                                );
+                                e.target.value = display;
+                                return;
+                              }
+                              handleCellUpdate(idx, cellIdx, next);
+                            }}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter")
+                                (e.target as HTMLInputElement).blur();
+                            }}
+                          />
+                        );
                       } else if (header === "MAJOR MARKING") {
                         const isYes = display === "true";
                         const isNo = display === "false";
@@ -2076,17 +2108,22 @@ castingRateInputs,
                                     ? "bg-yellow-100"
                                     : "bg-white"
                               }`
-                            : ""
-                        }${isCellEditable || isPnBlankDropdown ? " bg-amber-50" : ""}`}
-                        style={
-                          cellIdx === 2
+                            : isCellEditable || isPnBlankDropdown
+                              ? " bg-amber-50"
+                              : ""
+                        }`}
+                        style={{
+                          ...(cellIdx === 2
                             ? { left: columnWidths[0] + columnWidths[1] }
                             : cellIdx === 1
                               ? { left: columnWidths[0] }
                               : cellIdx === 0
                                 ? { left: 0 }
-                                : undefined
-                        }
+                                : {}),
+                          ...(isErpBlankHighlight
+                            ? { backgroundColor: "#fed7aa" }
+                            : {}),
+                        }}
                       >
                         {cellContent}
                       </td>
