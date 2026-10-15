@@ -333,6 +333,16 @@ function parseDate(str: string): Date | null {
   return null;
 }
 
+/** Converts a DatePicker value (dd-MMM-yyyy) or ISO string to yyyy-MM-dd. */
+function toIsoDate(value: string): string {
+  const d = parseDate(value);
+  if (!d) return "";
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
 const EMPTY_DATE_RANGES: Record<
   string,
   { from: string; to: string; blank?: boolean }
@@ -723,7 +733,7 @@ castingRateInputs,
     [filterActions, setCurrentPage],
   );
 
-  const DATE_FILTER_CANDIDATES = useMemo(() => new Set(["Date", "expiryDate", "DATE OF CONTRACT", "LC DATE/RTGS DATE", "LAST DATE OF SHIPMENT/DATE OF LC"]), []);
+  const DATE_FILTER_CANDIDATES = useMemo(() => new Set(["Date", "DATE", "expiryDate", "DATE OF CONTRACT", "LC DATE/RTGS DATE", "LAST DATE OF SHIPMENT/DATE OF LC"]), []);
   const dateColIdx = useMemo(() => {
     for (const cand of DATE_FILTER_CANDIDATES) {
       const idx = headers.indexOf(cand);
@@ -1526,37 +1536,35 @@ castingRateInputs,
                       (isDateFilterHeader(header) ? (
                         <div className="flex flex-col gap-1 mt-1.5">
                           <div className="flex items-center gap-1">
-                            <input
-                              type="date"
+                            <DatePicker
                               value={
                                 dateRanges[header]?.from ??
                                 (dateFrom || "")
                               }
-                              onChange={(e) =>
+                              onChange={(next) =>
                                 setDateRange(
                                   header,
-                                  e.target.value,
+                                  toIsoDate(next),
                                   dateRanges[header]?.to ?? (dateTo || ""),
                                 )
                               }
-                              onClick={(e) => e.stopPropagation()}
-                              className="flex-1 min-w-0 text-[10px] border border-[#e1e6eb] rounded bg-white text-[#0a2540] px-1 py-0.5 outline-none"
+                              placeholder="From"
+                              className="flex-1 min-w-0 text-[10px] border border-[#e1e6eb] rounded bg-white text-[#0a2540] px-1 py-0.5"
                             />
-                            <input
-                              type="date"
+                            <DatePicker
                               value={
                                 dateRanges[header]?.to ?? (dateTo || "")
                               }
-                              onChange={(e) =>
+                              onChange={(next) =>
                                 setDateRange(
                                   header,
                                   dateRanges[header]?.from ??
                                     (dateFrom || ""),
-                                  e.target.value,
+                                  toIsoDate(next),
                                 )
                               }
-                              onClick={(e) => e.stopPropagation()}
-                              className="flex-1 min-w-0 text-[10px] border border-[#e1e6eb] rounded bg-white text-[#0a2540] px-1 py-0.5 outline-none"
+                              placeholder="To"
+                              className="flex-1 min-w-0 text-[10px] border border-[#e1e6eb] rounded bg-white text-[#0a2540] px-1 py-0.5"
                             />
                           </div>
                           {header === "DATE OF CONTRACT" && (
