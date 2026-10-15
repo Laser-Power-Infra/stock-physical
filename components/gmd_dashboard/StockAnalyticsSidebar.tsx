@@ -4,6 +4,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChevronsLeft, ChevronsRight, Hash, IndianRupee } from "lucide-react";
 
 export type StockCardKind = "qty" | "value";
+export type MajorMinorKind = "yes" | "no" | "blank";
+
+const MAJOR_MINOR_OPTIONS: { kind: MajorMinorKind; label: string }[] = [
+  { kind: "yes", label: "Major" },
+  { kind: "no", label: "Minor" },
+  { kind: "blank", label: "Blank" },
+];
 
 interface StockAnalyticsSidebarProps {
   availableQty: number;
@@ -12,6 +19,9 @@ interface StockAnalyticsSidebarProps {
   onToggle: () => void;
   activeCard: StockCardKind | null;
   onCardClick: (kind: StockCardKind) => void;
+  majorMinorSelection: Set<MajorMinorKind>;
+  majorMinorCounts: Record<MajorMinorKind, number>;
+  onToggleMajorMinor: (kind: MajorMinorKind) => void;
 }
 
 function formatQty(n: number): string {
@@ -32,6 +42,9 @@ export default function StockAnalyticsSidebar({
   onToggle,
   activeCard,
   onCardClick,
+  majorMinorSelection,
+  majorMinorCounts,
+  onToggleMajorMinor,
 }: StockAnalyticsSidebarProps) {
   if (collapsed) {
     return (
@@ -122,6 +135,43 @@ export default function StockAnalyticsSidebar({
           <span className="text-xl font-bold tracking-tight text-foreground">
             ₹ {formatValue(availableValue)}
           </span>
+        </CardContent>
+      </Card>
+
+      <Card size="sm" className="shadow-sm">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-[12px] font-semibold">
+            Major / Minor Marking
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="grid grid-cols-3 gap-1.5">
+          {MAJOR_MINOR_OPTIONS.map(({ kind, label }) => {
+            const active = majorMinorSelection.has(kind);
+            return (
+              <button
+                key={kind}
+                type="button"
+                onClick={() => onToggleMajorMinor(kind)}
+                aria-pressed={active}
+                className={`flex flex-col items-center justify-center gap-1 rounded-md border px-2 py-2 text-[11px] transition-all cursor-pointer ${
+                  active
+                    ? "border-[#0f62fe] bg-blue-50 text-[#0f62fe] font-semibold dark:bg-blue-500/10 dark:border-blue-500 dark:text-blue-300"
+                    : "border-border bg-background text-foreground hover:bg-muted/60"
+                }`}
+              >
+                <span>{label}</span>
+                <span
+                  className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${
+                    active
+                      ? "bg-blue-200 text-blue-900 dark:bg-blue-500/25 dark:text-blue-200"
+                      : "bg-muted text-muted-foreground"
+                  }`}
+                >
+                  {majorMinorCounts[kind]}
+                </span>
+              </button>
+            );
+          })}
         </CardContent>
       </Card>
     </aside>

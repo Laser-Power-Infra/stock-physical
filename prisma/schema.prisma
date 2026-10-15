@@ -52,6 +52,7 @@ model PhysicalStock {
   cost                           String?
   bom_id                         String?
   form_date                           DateTime @default(now())
+  majorminor_marking             Boolean? 
   created_at                     DateTime @default(now())
   updated_at                     DateTime @updatedAt
 

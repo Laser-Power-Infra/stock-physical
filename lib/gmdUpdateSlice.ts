@@ -46,6 +46,7 @@ export interface PhysicalStockRow {
   drawing_technical_data: string | null;
   cost: string | null;
   bom_id: string | null;
+  majorminor_marking: boolean | null;
 }
 
 const adapter = createEntityAdapter<PhysicalStockRow>();

@@ -33,6 +33,7 @@ export const COLUMNS = [
   "DRAWING/ TECHNICAL DATA",
   "COST",
   "BOM ID",
+  "MAJOR/MINOR MARKING",
 ];
 
 export const COL_INDEX_TO_DB_FIELD: Record<number, string> = {
@@ -70,6 +71,7 @@ export const COL_INDEX_TO_DB_FIELD: Record<number, string> = {
   31: "drawing_technical_data",
   32: "cost",
   33: "bom_id",
+  34: "majorminor_marking",
 };
 
 export const NUMERIC_COLUMNS = new Set([

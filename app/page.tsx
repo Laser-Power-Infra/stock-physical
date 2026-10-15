@@ -9,6 +9,7 @@ import GMDUpdateHeader from "@/components/gmd_dashboard/GMDUpdateHeader";
 import PhysicalStockFormDialog from "@/components/gmd_dashboard/PhysicalStockFormDialog";
 import StockAnalyticsSidebar, {
   type StockCardKind,
+  type MajorMinorKind,
 } from "@/components/gmd_dashboard/StockAnalyticsSidebar";
 import {
   COLUMNS,
@@ -34,6 +35,7 @@ interface PhysicalStockApiResponse {
 
 const AVAILABLE_IDX = COLUMNS.indexOf("AVAILABLE QTY.");
 const RATE_IDX = COLUMNS.indexOf("rate/unit");
+const MAJOR_IDX = COLUMNS.indexOf("MAJOR/MINOR MARKING");
 
 function toNum(value: unknown): number {
   const n = parseFloat(String(value ?? "").replace(/,/g, ""));
@@ -59,6 +61,9 @@ export default function Home() {
   const [filteredRows, setFilteredRows] = useState<unknown[][]>([]);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [cardFilter, setCardFilter] = useState<StockCardKind | null>(null);
+  const [majorMinorFilter, setMajorMinorFilter] = useState<Set<MajorMinorKind>>(
+    new Set(),
+  );
 
   const loadData = useCallback(async () => {
     try {
@@ -84,8 +89,8 @@ export default function Home() {
   const ids = useAppSelector(selectIds);
   const totalRows = useMemo(() => rows.length, [rows]);
 
-  const { displayRows, displayIds } = useMemo(() => {
-    if (!cardFilter) return { displayRows: rows, displayIds: ids };
+  const baseRows = useMemo(() => {
+    if (!cardFilter) return { rows, ids };
     const rowsOut: unknown[][] = [];
     const idsOut: string[] = [];
     for (let i = 0; i < rows.length; i++) {
@@ -97,8 +102,45 @@ export default function Home() {
       rowsOut.push(row);
       idsOut.push(ids[i]);
     }
-    return { displayRows: rowsOut, displayIds: idsOut };
+    return { rows: rowsOut, ids: idsOut };
   }, [rows, ids, cardFilter]);
+
+  const majorMinorCounts = useMemo(() => {
+    const counts: Record<MajorMinorKind, number> = { yes: 0, no: 0, blank: 0 };
+    for (const row of baseRows.rows) {
+      const value = row[MAJOR_IDX];
+      if (value === true) counts.yes++;
+      else if (value === false) counts.no++;
+      else counts.blank++;
+    }
+    return counts;
+  }, [baseRows]);
+
+  const { displayRows, displayIds } = useMemo(() => {
+    if (majorMinorFilter.size === 0) {
+      return { displayRows: baseRows.rows, displayIds: baseRows.ids };
+    }
+    const rowsOut: unknown[][] = [];
+    const idsOut: string[] = [];
+    for (let i = 0; i < baseRows.rows.length; i++) {
+      const value = baseRows.rows[i][MAJOR_IDX];
+      const kind: MajorMinorKind =
+        value === true ? "yes" : value === false ? "no" : "blank";
+      if (!majorMinorFilter.has(kind)) continue;
+      rowsOut.push(baseRows.rows[i]);
+      idsOut.push(baseRows.ids[i]);
+    }
+    return { displayRows: rowsOut, displayIds: idsOut };
+  }, [baseRows, majorMinorFilter]);
+
+  const toggleMajorMinor = useCallback((kind: MajorMinorKind) => {
+    setMajorMinorFilter((prev) => {
+      const next = new Set(prev);
+      if (next.has(kind)) next.delete(kind);
+      else next.add(kind);
+      return next;
+    });
+  }, []);
 
   const { availableQty, availableValue } = useMemo(() => {
     let qty = 0;
@@ -188,6 +230,9 @@ export default function Home() {
               onCardClick={(kind) =>
                 setCardFilter((prev) => (prev === kind ? null : kind))
               }
+              majorMinorSelection={majorMinorFilter}
+              majorMinorCounts={majorMinorCounts}
+              onToggleMajorMinor={toggleMajorMinor}
             />
             <div className="flex-1 min-w-0 min-h-0 flex flex-col overflow-hidden">
               <GMDUpdateTable
